@@ -8,6 +8,7 @@ import vm from 'node:vm';
 
 function load() {
   const tabs = {};
+  const formats = [];
   const makeSheet = (name) => {
     const rows = [];
     const range = (r = 1, c = 1, nr = 1, nc = 1) => ({
@@ -15,6 +16,7 @@ function load() {
       setValues(v) { v.forEach((vr, i) => { rows[r - 1 + i] = rows[r - 1 + i] || []; vr.forEach((x, j) => { rows[r - 1 + i][c - 1 + j] = x; }); }); return this; },
       clearContent() { for (let i = 0; i < nr; i++) if (rows[r - 1 + i]) for (let j = 0; j < nc; j++) rows[r - 1 + i][c - 1 + j] = ''; return this; },
       setFontWeight() { return this; }, setWrap() { return this; }, setHorizontalAlignment() { return this; },
+      setNumberFormat(f) { formats.push([name, c, f]); return this; },
     });
     const display = (v) => (v instanceof Date ? v.toISOString() : String(v ?? ''));
     return {
@@ -58,7 +60,7 @@ function load() {
   const batch = (rows) => JSON.parse(ctx.doPost({ postData: { contents: JSON.stringify({ action: 'batch', rows }) } }).body);
   const questions = () => JSON.parse(ctx.doGet({ parameter: { action: 'questions' } }).body);
   const rename = (from, to) => { tabs[to] = tabs[from]; tabs[to].name = to; delete tabs[from]; };
-  return { ctx, tabs, post, get, batch, questions, rename, lock: (v) => { locked = v; } };
+  return { ctx, tabs, formats, post, get, batch, questions, rename, lock: (v) => { locked = v; } };
 }
 
 test('valid answer is appended with a lower-cased email', () => {
@@ -312,4 +314,10 @@ test('questions: columns found by name, in English too, in any order', () => {
   ctx.setup();
   tabs.Questions.rows.splice(0, Infinity, ['Question', 'Pillar', 'Series'], ['Hello', 4, 3]);
   assert.deepEqual(plain(questions()), { ok: true, rows: 1, questions: { 3: { 4: 'Hello' } } });
+});
+
+test('new answers tabs show the Timestamp with date and time', () => {
+  const { ctx, formats } = load();
+  ctx.setup();
+  for (const s of [1, 2, 3]) assert.ok(formats.some(([tab, col, f]) => tab === `Responses S${s}` && col === 1 && f === 'dd/mm/yyyy hh:mm:ss'));
 });

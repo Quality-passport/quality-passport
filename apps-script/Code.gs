@@ -183,6 +183,7 @@ function responseTab_(ss, name) {
   sheet.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold');
   sheet.setFrozenRows(1);
   head.forEach(function (h, i) {
+    if (h === 'Timestamp') sheet.getRange(1, i + 1, sheet.getMaxRows(), 1).setNumberFormat('dd/mm/yyyy hh:mm:ss'); // date and time
     if (h === 'Question') sheet.setColumnWidth(i + 1, 320);
     if (h === 'Answer') sheet.setColumnWidth(i + 1, 480);
     if (h === 'Question' || h === 'Answer') sheet.getRange(1, i + 1, sheet.getMaxRows(), 1).setWrap(true);
