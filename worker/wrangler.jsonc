@@ -12,12 +12,17 @@
       "migrations_dir": "migrations"
     }
   ],
-  // Every minute, new answers are copied to the Google Sheet in one batch.
+  // Copy of the questions written in the Sheet ("Questions" tab), served close to each participant.
+  // Namespace "quality-passport-api-questions", created by the first deploy (2026-11-02).
+  "kv_namespaces": [
+    { "binding": "QUESTIONS", "id": "a8382dfb46804db4a5f0d789865af0e7" }
+  ],
+  // Every minute, new answers are copied to the Google Sheet in one batch, and the questions are read back.
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
-    // Apps Script web app (apps-script/Code.gs, a deployment with the "batch" action).
+    // Apps Script web app (apps-script/Code.gs, deployment "Version 6 · séries": actions "batch" and "questions").
     // Empty = no copy to the Sheet (answers stay in D1).
-    "SHEET_URL": "https://script.google.com/macros/s/AKfycbyWMJ9Y1HOLqCW6aA_ItfOFHB8id3mDnysmwZVwS863pJHW_0zlszZzG1sCwhqd76_sLw/exec"
+    "SHEET_URL": "https://script.google.com/macros/s/AKfycbytjJmchZZpmR7wE_iJXUINYzG_dsR3tsKjnvziYfOrBaB75NFxTFTpPzgGA8qdh90i9w/exec"
   },
   "observability": { "enabled": true }
 }

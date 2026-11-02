@@ -1,11 +1,13 @@
-// Entry point: theme, texts, sync, then the first screen.
+// Entry point: series and language, questions, theme, texts, sync, then the first screen.
+import { seriesParam } from './env.js';
 import { applyLogo } from './logo.js';
 import { drawPassport } from './passport/draw.js';
 import { preloadPdf } from './passport/pdf.js';
+import { loadQuestions } from './questions.js';
 import { restoreStars, retryRestoreInBackground, startAutoFlush } from './queue.js';
 import { initSyncStatus } from './sync-status.js';
 import { go, route } from './router.js';
-import { state, starCount, syncFromOtherTabs } from './state.js';
+import { setSeries, state, starCount, syncFromOtherTabs } from './state.js';
 import { T, applyStaticText, applyTheme, checkConfig } from './ui.js';
 import { nameFromEmail } from './util.js';
 import './screens/loading.js';
@@ -14,6 +16,10 @@ import './screens/question.js';
 import './screens/passport.js';
 import './screens/celebration.js';
 
+// The QR code's series is remembered: it sets the language of later pages without a series.
+setSeries(seriesParam());
+// Questions are asked for at once: on a first scan they arrive while the email is typed.
+loadQuestions();
 applyTheme();
 applyStaticText();
 checkConfig();

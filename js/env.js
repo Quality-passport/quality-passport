@@ -3,6 +3,7 @@ import { CONFIG } from '../config.js';
 
 export const params = new URLSearchParams(location.search);
 export const IDS = [1, 2, 3, 4];
+export const SERIES_IDS = [1, 2, 3];
 // Same rule as apps-script/Code.gs. First char cannot start a spreadsheet formula.
 export const EMAIL_RE = /^[^@\s=+\-][^@\s]*@[^@\s]+\.[^@\s]+$/;
 export const IS_LOCAL = location.protocol === 'file:' ||
@@ -15,6 +16,12 @@ export const MOCK_FAIL = params.get('mockfail') === '1';
 export function pillarParam() {
   const p = Number(params.get('p'));
   return IDS.includes(p) ? p : null;
+}
+
+/** Series id from ?s= (the QR code's series), or null. Same rule as ?p=: "02" is 2, "1.5" is nothing. */
+export function seriesParam() {
+  const s = Number(params.get('s'));
+  return SERIES_IDS.includes(s) ? s : null;
 }
 
 /** Removes ?p= from the address bar so a reload shows the passport, keeps other params. */

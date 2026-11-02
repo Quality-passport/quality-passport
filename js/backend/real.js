@@ -1,10 +1,11 @@
-// Cloudflare Worker backend (worker/): answers go to D1, then to the Google Sheet every minute.
+// Cloudflare Worker backend (worker/): answers go to D1, then to the Google Sheet every minute;
+// the questions written in the Sheet are served from a copy kept close to each participant.
 // POST as text/plain and plain GET = "simple" requests: no CORS preflight.
 import { CONFIG } from '../../config.js';
 
 const TIMEOUT_MS = 20000;
 const api = (path) => CONFIG.API_URL.replace(/\/+$/, '') + path;
-const body = (item) => JSON.stringify({ email: item.email, p: item.p, answer: item.answer, id: item.id });
+const body = (item) => JSON.stringify({ email: item.email, s: item.s, p: item.p, question: item.question, answer: item.answer, id: item.id });
 
 /** Resolves to 'ok' (saved), 'drop' (rejected for good) or 'retry'. */
 export async function send(item) {
@@ -32,6 +33,14 @@ export async function stars(email) {
   const r = await fetch(api('/stars?email=' + encodeURIComponent(email)));
   const d = await r.json();
   return d?.stars || {};
+}
+
+/** { "1": { "1": "question text", ... }, ... } for the 3 series. */
+export async function questions() {
+  const r = await fetch(api('/questions'));
+  const d = await r.json();
+  if (!d?.ok) throw new Error('no questions');
+  return d.questions || {};
 }
 
 /** Last chance when the page is being closed: the browser delivers these even after the tab

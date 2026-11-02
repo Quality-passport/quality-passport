@@ -16,7 +16,10 @@ export default defineConfig({
     reuseExistingServer: false,
   },
   projects: [
-    { name: 'iPhone 13', use: { ...devices['iPhone 13'] } },
-    { name: 'Pixel 7', use: { ...devices['Pixel 7'] } },
+    { name: 'iPhone 13', use: { ...devices['iPhone 13'] }, grepInvert: /@layout/ },
+    { name: 'Pixel 7', use: { ...devices['Pixel 7'] }, grepInvert: /@layout/ },
+    // Smallest phone aimed at: iPhone SE (2nd/3rd gen), 375 pt wide, 548 pt visible under Safari's bars.
+    // Runs the layout checks and the screenshots only.
+    { name: 'iPhone SE', use: { ...devices['iPhone SE (3rd gen)'], viewport: { width: 375, height: 548 } }, grep: /@layout|@shots/ },
   ],
 });

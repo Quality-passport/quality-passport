@@ -3,6 +3,7 @@
 .celebration { background: var(--ipsen-navy); color: #ffffff; }
 .celebration .page { gap: 22px; }
 .celebration h1 { color: #ffffff; font-size: 30px; }
+.celebration:lang(fr) h1 { font-size: 26px; } /* « Quatre piliers. Quatre étoiles. » on one line, like the English title */
 .celebration .lead { color: rgba(255,255,255,.72); font-size: 15px; }
 .eyebrow.on-dark { color: rgba(255,255,255,.6); }
 

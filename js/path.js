@@ -2,8 +2,9 @@
 // A pillar not yet earned stays hidden ("?"): pillars are discovered one QR code at a time.
 import { CONFIG } from '../config.js';
 import { iconSvg } from './icons.js';
+import { fmtDate } from './lang.js';
 import { T, starSvg } from './ui.js';
-import { fmtDate } from './util.js';
+import { fmt } from './util.js';
 
 /**
  * opts.lit(id) -> bool      earned
@@ -16,7 +17,7 @@ export function renderPath(el, { lit = () => false, date = () => null, fresh = n
     const node = document.createElement('div');
     node.className = 'node' + (on ? ' on' : ' hidden-pillar') + (p.id === fresh ? ' fresh' : '');
     node.setAttribute('role', 'img');
-    node.setAttribute('aria-label', on ? `${p.name}: star earned` : T.toDiscover);
+    node.setAttribute('aria-label', on ? fmt(T.pillarEarnedLabel, { pillar: p.name }) : T.toDiscover);
 
     const ring = document.createElement('div');
     ring.className = 'ring';

@@ -4,5 +4,5 @@ playwright-report/
 tests/screenshots/
 .DS_Store
 
-# Internal spec, kept local only
-Quality Passport WQW spec et architecture.md
+# Internal specs and test plans, kept local only
+Quality Passport *.md

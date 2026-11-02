@@ -1,9 +1,11 @@
-// Shared UI helpers: static texts, theme, banners, toast, star icon.
+// Shared UI helpers: static texts (in the page's language), theme, config checks, toast, star icon.
 import { CONFIG } from '../config.js';
-import { IS_LOCAL, MOCK } from './env.js';
+import { IS_LOCAL, MOCK, SERIES_IDS } from './env.js';
+import { LANG } from './lang.js';
 import { $ } from './util.js';
 
-export const T = CONFIG.TEXT;
+/** Interface texts in the language of this page (see lang.js). */
+export const T = CONFIG.TEXT[LANG];
 
 export function applyTheme() {
   const map = { primary: '--primary', accent: '--accent', surface: '--surface', star: '--star' };
@@ -12,8 +14,10 @@ export function applyTheme() {
   });
 }
 
-/** Fills [data-t] with TEXT keys and [data-config] with CONFIG keys. */
+/** Fills [data-t] with TEXT keys and [data-config] with CONFIG keys; sets the page language and title. */
 export function applyStaticText() {
+  document.documentElement.lang = LANG;
+  document.title = T.pageTitle;
   document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T[el.dataset.t] ?? ''; });
   document.querySelectorAll('[data-config]').forEach((el) => { el.textContent = CONFIG[el.dataset.config] ?? ''; });
 }
@@ -24,7 +28,14 @@ export function checkConfig() {
   const placeholder = /\bTODO\b|lorem|ipsum/i;
   const ids = CONFIG.PILLARS.map((p) => p.id).sort().join(',');
   if (ids !== '1,2,3,4') problems.push('PILLARS must have ids 1 to 4');
-  if (CONFIG.PILLARS.some((p) => placeholder.test(`${p.name} ${p.question}`))) problems.push('pillar texts are placeholders');
+  if (CONFIG.PILLARS.some((p) => placeholder.test(p.name))) problems.push('pillar names are placeholders');
+  SERIES_IDS.forEach((s) => { if (!CONFIG.TEXT[CONFIG.SERIES[s]?.lang]) problems.push(`series ${s} has no texts for its language`); });
+  const keys = Object.keys(CONFIG.TEXT.en);
+  Object.entries(CONFIG.TEXT).forEach(([lang, texts]) => {
+    const missing = keys.filter((k) => !texts[k]);
+    if (missing.length) problems.push(`TEXT.${lang} misses ${missing.join(', ')}`);
+    if (Object.values(texts).some((v) => placeholder.test(v))) problems.push(`TEXT.${lang} has placeholders`);
+  });
   if (MOCK) problems.push(IS_LOCAL ? 'mock mode: answers stay in this browser' : 'API_URL is empty, answers are not saved');
   if (problems.length) console.warn('[Quality Passport] Config: ' + problems.join(' · '));
 }

@@ -21,19 +21,6 @@ export function withTimeout(promise, ms) {
   return Promise.race([promise, sleep(ms).then(() => { throw new Error('timeout'); })]);
 }
 
-const DATE_FORMATS = {
-  short: { day: 'numeric', month: 'short' },                  // 24 Sept
-  stamp: { day: 'numeric', month: 'short', year: 'numeric' }, // 24 Sept 2026
-  long: { day: 'numeric', month: 'long', year: 'numeric' },   // 24 September 2026
-};
-/** ISO string -> formatted date; format: 'short' | 'stamp' | 'long' (true = long). */
-export function fmtDate(iso, format = 'short') {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('en-GB', DATE_FORMATS[format === true ? 'long' : format] || DATE_FORMATS.short);
-}
-
 /** 'jean.dupont2@x.com' -> 'Jean Dupont' */
 export function nameFromEmail(email) {
   const local = String(email || '').split('@')[0].split('+')[0];

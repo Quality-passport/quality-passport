@@ -2,12 +2,12 @@
   "name": "quality-passport",
   "private": true,
   "type": "module",
-  "description": "World Quality Week Quality Passport: static web app (GitHub Pages) + Google Apps Script + Google Sheet",
+  "description": "World Quality Week Quality Passport: static web app (GitHub Pages) + Cloudflare Worker (D1, KV) + Google Apps Script + Google Sheet",
   "scripts": {
     "serve": "node tests/server.mjs",
-    "test": "node --test tests/code-gs.test.mjs && playwright test",
+    "test": "node --test --no-warnings tests/code-gs.test.mjs tests/worker.test.mjs && playwright test",
     "test:ui": "playwright test",
-    "test:backend": "node --test tests/code-gs.test.mjs",
+    "test:backend": "node --test --no-warnings tests/code-gs.test.mjs tests/worker.test.mjs",
     "qr": "node qr/generate.mjs"
   },
   "devDependencies": {

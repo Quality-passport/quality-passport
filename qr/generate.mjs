@@ -1,5 +1,7 @@
-// Generates the 5 QR codes for print, each labelled under the code ("Pilier 1"… "Passeport"),
-// as SVG (vector, for the printer) and PNG 4096 px wide, then checks each PNG by decoding it back.
+// Generates the 15 QR codes for print: 3 series × (4 pillars + 1 passport), each labelled under
+// the code ("Série 2 · Pilier 3", "Série 2 · Passeport"), as SVG (vector, for the printer) and
+// PNG 4096 px wide, then checks each PNG by decoding it back.
+// Addresses: <base>?s=S&p=P (pillar) and <base>?s=S (passport). The series sets the questions and the language.
 // Usage: node qr/generate.mjs https://<user>.github.io/<repo>/
 import QRCode from 'qrcode';
 import jsQR from 'jsqr';
@@ -16,18 +18,23 @@ if (!base || !/^https:\/\/\S+$/.test(base)) {
 
 const dir = fileURLToPath(new URL('.', import.meta.url));
 const NAVY = '#000e56';
-const targets = [1, 2, 3, 4].map((n) => {
+const SERIES = [1, 2, 3];
+const address = (s, p) => {
   const u = new URL(base);
-  u.searchParams.set('p', String(n));
-  return { file: `pilier-${n}`, label: `Pilier ${n}`, url: u.href };
-});
-targets.push({ file: 'passeport', label: 'Passeport', url: new URL(base).href });
+  u.searchParams.set('s', String(s));
+  if (p) u.searchParams.set('p', String(p));
+  return u.href;
+};
+const targets = SERIES.flatMap((s) => [
+  ...[1, 2, 3, 4].map((p) => ({ file: `serie-${s}-pilier-${p}`, label: `Série ${s} · Pilier ${p}`, url: address(s, p) })),
+  { file: `serie-${s}-passeport`, label: `Série ${s} · Passeport`, url: address(s) },
+]);
 
 // Remove files from earlier runs (old names included) so the folder only holds the current set.
 for (const f of readdirSync(dir)) if (/\.(png|svg)$/.test(f)) unlinkSync(dir + f);
 
 /** QR modules + white quiet zone + label underneath, as one SVG. */
-function labelledSvg(url, label) {
+function labelledSvg(url, label, fontSize = 4.2) {
   const qr = QRCode.create(url, { errorCorrectionLevel: 'M' });
   const n = qr.modules.size;
   const margin = 4;
@@ -40,18 +47,29 @@ function labelledSvg(url, label) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size + labelH}" shape-rendering="crispEdges">
 <rect width="${size}" height="${size + labelH}" fill="#ffffff"/>
 <path fill="${NAVY}" d="${d}"/>
-<text x="${size / 2}" y="${size + labelH / 2}" text-anchor="middle" dominant-baseline="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="4.2" fill="${NAVY}" shape-rendering="geometricPrecision">${label}</text>
+<text x="${size / 2}" y="${size + labelH / 2}" text-anchor="middle" dominant-baseline="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="${fontSize}" fill="${NAVY}" shape-rendering="geometricPrecision">${label}</text>
 </svg>`;
 }
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1024, height: 1024 }, deviceScaleFactor: 4 });
 let failed = 0;
+const render = (svg) => page.setContent(`<body style="margin:0"><div style="width:1024px">${svg.replace('<svg ', '<svg width="1024" ')}</div></body>`);
 for (const { file, label, url } of targets) {
-  const svg = labelledSvg(url, label);
+  // The label must stay within the code's width: measure it, shrink the font if needed.
+  let svg = labelledSvg(url, label);
+  await render(svg);
+  const { text, box } = await page.evaluate(() => ({
+    text: document.querySelector('text').getBBox().width,
+    box: document.querySelector('svg').viewBox.baseVal.width,
+  }));
+  const room = box - 6; // 3 units of white on each side
+  if (text > room) {
+    svg = labelledSvg(url, label, Math.floor((4.2 * room / text) * 100) / 100);
+    await render(svg);
+  }
   writeFileSync(`${dir}${file}.svg`, svg);
   // PNG 4096 px wide (about 35 cm at 300 dpi), rendered from the same SVG.
-  await page.setContent(`<body style="margin:0"><div style="width:1024px">${svg.replace('<svg ', '<svg width="1024" ')}</div></body>`);
   const el = await page.$('svg');
   await el.screenshot({ path: `${dir}${file}.png` });
   const png = PNG.sync.read(readFileSync(`${dir}${file}.png`));
@@ -65,4 +83,4 @@ if (failed) {
   console.error(`${failed} QR code(s) do not decode to the expected address.`);
   process.exit(1);
 }
-console.log('All 5 QR codes decode to the expected addresses (labelled SVG + PNG in qr/).');
+console.log(`All ${targets.length} QR codes decode to the expected addresses (labelled SVG + PNG in qr/).`);

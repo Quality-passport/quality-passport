@@ -2,11 +2,12 @@
 // Shown once at the 4th star, then reachable from the passport.
 import { CONFIG } from '../../config.js';
 import { IDS } from '../env.js';
+import { fmtDate } from '../lang.js';
 import { canShareFiles, downloadPassport, sharePassportFile, preloadPdf } from '../passport/pdf.js';
 import { go, register } from '../router.js';
 import { state, save } from '../state.js';
 import { T, busy, starSvg } from '../ui.js';
-import { $, fmt, fmtDate, nameFromEmail } from '../util.js';
+import { $, fmt, nameFromEmail } from '../util.js';
 
 const holder = $('holder');
 const holderName = () => holder.value.trim() || nameFromEmail(state.email);

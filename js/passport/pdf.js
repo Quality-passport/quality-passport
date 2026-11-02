@@ -7,7 +7,6 @@ import { drawPassport } from './draw.js';
 
 const JSPDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 const JSPDF_SRI = 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk';
-const FILE = 'Quality-Passport';
 
 let loading = null;
 function loadJsPDF() {
@@ -38,6 +37,7 @@ async function buildPdf(name) {
 }
 
 export async function downloadPassport(name) {
+  const FILE = T.fileName;
   try {
     (await buildPdf(name)).save(`${FILE}.pdf`);
   } catch {
@@ -56,7 +56,7 @@ export async function downloadPassport(name) {
 export async function sharePassportFile(name) {
   try {
     const blob = (await buildPdf(name)).output('blob');
-    const file = new File([blob], `${FILE}.pdf`, { type: 'application/pdf' });
+    const file = new File([blob], `${T.fileName}.pdf`, { type: 'application/pdf' });
     await navigator.share({ files: [file], title: T.docTitle });
     return true;
   } catch (err) {
@@ -66,7 +66,7 @@ export async function sharePassportFile(name) {
 
 export function canShareFiles() {
   try {
-    const f = new File(['x'], `${FILE}.pdf`, { type: 'application/pdf' });
+    const f = new File(['x'], `${T.fileName}.pdf`, { type: 'application/pdf' });
     return !!navigator.canShare?.({ files: [f] });
   } catch {
     return false;

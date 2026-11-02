@@ -4,10 +4,11 @@
 import { CONFIG } from '../../config.js';
 import { IDS } from '../env.js';
 import { drawIcon } from '../icons.js';
+import { fmtDate } from '../lang.js';
 import { loadLogo } from '../logo.js';
 import { state, hasStar } from '../state.js';
 import { T } from '../ui.js';
-import { fmt, fmtDate, pillar } from '../util.js';
+import { fmt, pillar } from '../util.js';
 
 const W = 1754;
 const H = 1240;
