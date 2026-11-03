@@ -20,9 +20,10 @@
   // Every minute, new answers are copied to the Google Sheet in one batch, and the questions are read back.
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
-    // Apps Script web app (apps-script/Code.gs, deployment "Version 6 · séries": actions "batch" and "questions").
+    // Apps Script web app (apps-script/Code.gs, deployment of 2026-11-03 "quiz série 2": actions "batch" and "questions",
+    // Correct column and ✗ in Stars). Previous: "Version 6 · séries" AKfycbytjJmchZZpmR7wE_iJXUINYzG_dsR3tsKjnvziYfOrBaB75NFxTFTpPzgGA8qdh90i9w.
     // Empty = no copy to the Sheet (answers stay in D1).
-    "SHEET_URL": "https://script.google.com/macros/s/AKfycbytjJmchZZpmR7wE_iJXUINYzG_dsR3tsKjnvziYfOrBaB75NFxTFTpPzgGA8qdh90i9w/exec"
+    "SHEET_URL": "https://script.google.com/macros/s/AKfycbzRXY79Hv1iiWbdXIwkCrrTzU5EK7jR5Zg4qx47OrBIlVE3xCOpz9dCRnqYQThaRBFTNA/exec"
   },
   "observability": { "enabled": true }
 }
