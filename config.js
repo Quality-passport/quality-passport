@@ -158,7 +158,6 @@ export const CONFIG = {
       resultTitle2: 'Four pillars. Two stars.',
       resultTitle3: 'Four pillars. Three stars.',
       resultSubtitle: 'Thank you for taking part.\nQuality is a habit, not a score.',
-      resultBack: 'See my passport',
     },
     fr: {
       pageTitle: 'Passeport Qualité',
@@ -217,14 +216,13 @@ export const CONFIG = {
       noStar: 'Sans étoile',
       pillarMissedLabel: '{pillar} : répondu, sans étoile',
       quizDoneTitle: 'Quiz terminé',
-      quizDoneScore: '{n} étoiles sur 4',
+      quizDoneScore: 'Étoiles : {n} sur 4',
       seeResult: 'Voir mon résultat',
       resultTitle0: 'Quatre piliers explorés.',
       resultTitle1: 'Quatre piliers. Une étoile.',
       resultTitle2: 'Quatre piliers. Deux étoiles.',
       resultTitle3: 'Quatre piliers. Trois étoiles.',
       resultSubtitle: 'Merci de votre participation.\nLa qualité est une habitude, pas un score.',
-      resultBack: 'Voir mon passeport',
     },
   },
 };

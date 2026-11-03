@@ -62,12 +62,15 @@ function showVerdict(letter, answer, right) {
     el.classList.toggle('wrong', l === letter && !right);
     el.querySelector('.qz-mark').textContent = l === answer ? '✓' : l === letter ? '✕' : '';
   });
+  $('qz-mini-stars').replaceChildren(...IDS.map((i) => starSvg(hasStar(i)))); // the star just earned lights up here too
   verdict.textContent = right ? T.quizRight : fmt(T.quizWrong, { letter: answer });
   verdict.className = `qz-verdict ${right ? 'right' : 'wrong'}`;
   verdict.hidden = false;
   $('qz-intro').style.visibility = 'hidden'; // keeps its room: the options do not jump
   confirmBtn.hidden = true;
   nextBtn.hidden = false;
+  // Small phones (iPhone SE): bring the verdict and "Continue" into view; no effect when everything fits.
+  nextBtn.scrollIntoView({ block: 'nearest' });
 }
 
 function option(letter, text) {

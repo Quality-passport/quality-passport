@@ -1,6 +1,6 @@
 // End of the quiz with fewer than 4 stars: the score and a thank-you. Never a second try, nor a
-// "next time": a pillar is played once. Shown once after the last pillar, then from the passport
-// ("See my result"). With 4 stars, the celebration is shown instead, as in every series.
+// "next time": a pillar is played once; nor a "passport": it is earned with the 4 stars only.
+// "Done" leads to the track. Shown once after the last pillar, then from the passport ("See my result"). With 4 stars, the celebration is shown instead, as in every series.
 import { IDS } from '../env.js';
 import { go, register } from '../router.js';
 import { state, save, starCount } from '../state.js';

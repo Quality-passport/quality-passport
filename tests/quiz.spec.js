@@ -70,6 +70,7 @@ test.describe('quiz screen', () => {
     await expect(page.locator('#qz-confirm')).toBeEnabled();
     await page.click('#qz-confirm');
     await expect(page.locator('#qz-verdict')).toHaveText('Right answer. Star earned.');
+    await expect(page.locator('#qz-mini-stars .star-svg path[fill="var(--star)"]')).toHaveCount(1); // B2: lit at once
     await expect(page.locator('#qz-options input:enabled')).toHaveCount(0);
     await expect(page.locator('.qz-option.right')).toHaveAttribute('data-letter', 'C');
     await expect(page.locator('.qz-option.wrong')).toHaveCount(0);
@@ -317,7 +318,8 @@ test.describe('quiz screen', () => {
       await page.click('#qz-confirm');
       await expect(page.locator('#qz-verdict')).toBeVisible();
       const b = await over();
-      await page.locator('#qz-next').scrollIntoViewIfNeeded();
+      // The verdict and "Continue" come into view by themselves
+      await expect(page.locator('#qz-verdict')).toBeInViewport();
       await expect(page.locator('#qz-next')).toBeInViewport();
       expect([a.w, b.w]).toEqual([0, 0]);
       out.push(`P${p}: ${a.h} pt (choice), ${b.h} pt (verdict)`);
@@ -363,8 +365,9 @@ test.describe('end of the quiz', () => {
     await expect(page.locator('#r-title')).toHaveText('Four pillars. Three stars.');
     await expect(page.locator('#r-score')).toHaveText('3 of 4 stars');
     await expect(page.locator('#screen-result .lead')).toHaveText(EN.resultSubtitle);
-    await expect(page.locator('#screen-result')).not.toContainText(/next time|again|retry|download/i);
-    await expect(page.locator('#screen-result button')).toHaveText(['See my passport']);
+    // B1: not earned, so never called a passport here; never a second try
+    await expect(page.locator('#screen-result')).not.toContainText(/passport|next time|again|retry|download/i);
+    await expect(page.locator('#screen-result button')).toHaveText(['Done']);
     await page.goto('');
     await visible(page, 'passport'); // shown once
     await expect(page.locator('#p-quiz-done')).toBeVisible();
@@ -399,6 +402,13 @@ test.describe('end of the quiz', () => {
       await expect(page.locator('#r-title')).toHaveText(title);
     }
   });
+});
+
+test('B3. French score of the end screen agrees with any number of stars', async ({}, info) => {
+  test.skip(info.project.name !== 'iPhone 13', 'data only');
+  const fr = CONFIG.TEXT.fr.quizDoneScore;
+  for (const n of [0, 1, 2, 3]) expect(fr.replace('{n}', n)).not.toMatch(/\b[01] étoiles/);
+  expect(CONFIG.TEXT.en.quizDoneScore.replace('{n}', 1)).toBe('1 of 4 stars');
 });
 
 test('quiz screens @shots', async ({ page }, info) => {
