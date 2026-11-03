@@ -105,6 +105,7 @@ test.describe('quiz screen', () => {
     await page.click('#qz-next');
     await visible(page, 'passport');
     await expect(page.locator('#p-count')).toHaveText('0 of 4');
+    await expect(page.locator('#p-title')).toHaveText('My Quality Passport'); // still to play: the usual title
     await expect(page.locator('#p-earned-label')).toHaveText('Answered, no star');
     await expect(page.locator('#p-earned-name')).toHaveText('Quality as Enabler');
     const node = page.locator('.node').first();
@@ -370,6 +371,7 @@ test.describe('end of the quiz', () => {
     await expect(page.locator('#screen-result button')).toHaveText(['Done']);
     await page.goto('');
     await visible(page, 'passport'); // shown once
+    await expect(page.locator('#p-title')).toHaveText('My stars'); // not earned: not called a passport
     await expect(page.locator('#p-quiz-done')).toBeVisible();
     await expect(page.locator('#p-quiz-score')).toHaveText('3 of 4 stars');
     await expect(page.locator('#p-next')).toBeHidden();

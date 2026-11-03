@@ -35,6 +35,8 @@ register('passport', {
     $('p-next').hidden = played === 4;
     $('p-complete').hidden = n !== 4;
     const over = quizOver();
+    // Quiz over below 4 stars: the passport is not earned, so this screen is not called a passport.
+    $('p-title').textContent = over ? T.quizDonePassportTitle : T.passportTitle;
     $('p-quiz-done').hidden = !over;
     if (over) $('p-quiz-score').textContent = fmt(T.quizDoneScore, { n });
   },

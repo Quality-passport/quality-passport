@@ -151,6 +151,7 @@ export const CONFIG = {
       pillarMissedLabel: '{pillar}: answered, no star',   // read by screen readers
       quizDoneTitle: 'Quiz complete',
       quizDoneScore: '{n} of 4 stars',
+      quizDonePassportTitle: 'My stars',   // title of the passport screen once the quiz is over below 4 stars (the passport is not earned)
       seeResult: 'See my result',
       // End screen: never a "next time", a pillar is played once
       resultTitle0: 'Four pillars explored.',
@@ -216,6 +217,7 @@ export const CONFIG = {
       noStar: 'Sans étoile',
       pillarMissedLabel: '{pillar} : répondu, sans étoile',
       quizDoneTitle: 'Quiz terminé',
+      quizDonePassportTitle: 'Mes étoiles',
       quizDoneScore: 'Étoiles : {n} sur 4',
       seeResult: 'Voir mon résultat',
       resultTitle0: 'Quatre piliers explorés.',
