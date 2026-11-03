@@ -2,6 +2,7 @@ node_modules/
 test-results/
 playwright-report/
 tests/screenshots/
+tests/golden/
 .DS_Store
 
 # Internal specs and test plans, kept local only
