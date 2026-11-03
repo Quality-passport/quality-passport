@@ -18,7 +18,7 @@ const visible = (page, name) => expect(page.locator(`#screen-${name}`)).toBeVisi
 const SERIES = 5;
 const QUESTION = 6;
 
-async function answer(page, p, text = `My answer for pillar ${p}`, s = 2) {
+async function answer(page, p, text = `My answer for pillar ${p}`, s = 3) {
   await page.goto(`?s=${s}&p=${p}`);
   await visible(page, 'question');
   await page.fill('#answer', text);
@@ -40,8 +40,8 @@ test.describe('existing behaviour (non-regression)', () => {
   test('NR-01..04. full journey in any order, rescan, celebration', async ({ page }) => {
     const requests = [];
     page.on('request', (r) => requests.push(r.url()));
-    // 1. First scan ?s=2&p=3: Welcome, invalid email refused, valid email leads to question 3
-    await page.goto('?s=2&p=3');
+    // 1. First scan ?s=3&p=3: Welcome, invalid email refused, valid email leads to question 3
+    await page.goto('?s=3&p=3');
     await visible(page, 'welcome');
     await page.fill('#email', 'not-an-email');
     await page.click('#welcome-btn');
@@ -65,11 +65,11 @@ test.describe('existing behaviour (non-regression)', () => {
     await expect.poll(async () => (await sheet(page)).length).toBe(1);
     const [row] = await sheet(page);
     expect(row.slice(1, 4)).toEqual([EMAIL, 3, 'Doing it right the first time.']);
-    expect(row[SERIES]).toBe(2);
+    expect(row[SERIES]).toBe(3);
     expect(row[QUESTION]).toBe(EN.defaultQuestion);
 
-    // 3. Rescan ?s=2&p=3: passport, not the question
-    await page.goto('?s=2&p=3');
+    // 3. Rescan ?s=3&p=3: passport, not the question
+    await page.goto('?s=3&p=3');
     await visible(page, 'passport');
     await expect(page.locator('#p-earned-label')).toHaveText('Already stamped');
 
@@ -95,7 +95,7 @@ test.describe('existing behaviour (non-regression)', () => {
   });
 
   test('NR-03. answer limits: counter from 1800 characters, 2000 at most', async ({ page }) => {
-    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2&p=1');
+    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=1');
     await visible(page, 'question');
     await page.fill('#answer', 'x');
     await expect(page.locator('#submit-btn')).toBeEnabled();
@@ -111,7 +111,7 @@ test.describe('existing behaviour (non-regression)', () => {
   });
 
   test('NR-05. offline queue: star lit, answer kept, sent after reload', async ({ page }) => {
-    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2&p=2&mockfail=1');
+    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=2&mockfail=1');
     await visible(page, 'question');
     await page.fill('#answer', 'Sent while offline');
     await page.click('#submit-btn');
@@ -122,12 +122,12 @@ test.describe('existing behaviour (non-regression)', () => {
     expect(s.pending).toHaveLength(1);
     expect(await sheet(page)).toHaveLength(0);
 
-    await page.goto('?s=2'); // network back
+    await page.goto('?s=3'); // network back
     await expect.poll(async () => (await state(page)).pending.length, { timeout: 5000 }).toBe(0);
     const rows = await sheet(page);
     expect(rows).toHaveLength(1);
     expect(rows[0][3]).toBe('Sent while offline');
-    expect(rows[0][SERIES]).toBe(2);
+    expect(rows[0][SERIES]).toBe(3);
     expect(rows[0][QUESTION]).toBe(EN.defaultQuestion);
   });
 
@@ -149,7 +149,7 @@ test.describe('existing behaviour (non-regression)', () => {
         sessionStorage.setItem('seeded', '1');
       }
     }, rows);
-    await other.goto(new URL('?s=2&p=3', info.project.use.baseURL || 'http://localhost:4174/').href);
+    await other.goto(new URL('?s=3&p=3', info.project.use.baseURL || 'http://localhost:4174/').href);
     await visible(other, 'welcome');
     await other.fill('#email', EMAIL);
     await other.click('#welcome-btn');
@@ -159,10 +159,10 @@ test.describe('existing behaviour (non-regression)', () => {
   });
 
   test('NR-07 (QA-06). two tabs never lose each other\'s star or queued answer', async ({ page, context }) => {
-    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2&p=1');
+    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=1');
     await visible(page, 'question');
     const other = await context.newPage();
-    await other.goto('?s=2&p=2&mockfail=1');
+    await other.goto('?s=3&p=2&mockfail=1');
     await visible(other, 'question');
     await other.fill('#answer', 'answer from tab B');
     await other.click('#submit-btn');
@@ -173,14 +173,14 @@ test.describe('existing behaviour (non-regression)', () => {
     const raw = await page.evaluate(() => JSON.parse(localStorage.getItem('wqw_state')));
     expect(Object.keys(raw.stars).sort()).toEqual(['1', '2']);
     await expect.poll(async () => (await sheet(page)).map((r) => r[3]).sort(), { timeout: 8000 }).toContain('answer from tab A');
-    await page.goto('?s=2'); // tab B's answer, queued while failing, goes out from here
+    await page.goto('?s=3'); // tab B's answer, queued while failing, goes out from here
     await expect.poll(async () => (await sheet(page)).map((r) => r[3]), { timeout: 8000 }).toContain('answer from tab B');
   });
 
   test('NR-08 (QA-01). invalid ?s or ?p never opens a question', async ({ page }) => {
     await seed(page, { wqw_state: { email: EMAIL, stars: { 1: '2026-10-05T09:00:00Z' }, pending: [] } });
     for (const p of ['0', '5', 'abc', '1.5', '-1', '', '%3Cscript%3E']) {
-      await page.goto(`?s=2&p=${p}`);
+      await page.goto(`?s=3&p=${p}`);
       await visible(page, 'passport');
     }
     for (const s of ['0', '4', 'abc', '1.5', '-1', '', '%3Cscript%3E']) {
@@ -233,10 +233,10 @@ test.describe('existing behaviour (non-regression)', () => {
 
 test.describe('series', () => {
   test('SE-01/02. each QR code opens its own question; the answer keeps the question shown', async ({ page }) => {
-    await seed(page, { wqw_mock_questions: recetteQuestions, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2');
+    await seed(page, { wqw_mock_questions: recetteQuestions, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3');
     await visible(page, 'passport');
     await expect.poll(() => page.evaluate(() => !!localStorage.getItem('wqw_questions'))).toBe(true); // kept on the phone
-    for (const s of [1, 2, 3]) {
+    for (const s of [1, 3]) { // series 2 is a quiz: see the quiz tests
       for (const p of [1, 2, 3, 4]) {
         await page.goto(`?s=${s}&p=${p}`);
         await visible(page, 'question');
@@ -272,7 +272,7 @@ test.describe('series', () => {
   });
 
   test('SE-05. another series on the same phone (should not happen): question, star and language follow it', async ({ page }) => {
-    await seed(page, { wqw_state: { email: EMAIL, series: 2, stars: { 1: '2026-10-05T09:00:00Z' }, pending: [] } }, '?s=1&p=2');
+    await seed(page, { wqw_state: { email: EMAIL, series: 3, stars: { 1: '2026-10-05T09:00:00Z' }, pending: [] } }, '?s=1&p=2');
     await visible(page, 'question');
     await expect(page.locator('#q-label')).toHaveText('Pilier 2 sur 4');
     await page.fill('#answer', 'Test');
@@ -285,28 +285,28 @@ test.describe('series', () => {
     await expect(page.locator('#p-count')).toHaveText('2 sur 4');
   });
 
-  test('SE-07. ?s twice: the first counts; "02" is series 2', async ({ page }) => {
-    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=1&s=2&p=3');
+  test('SE-07. ?s twice: the first counts; "03" is series 3', async ({ page }) => {
+    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=1&s=3&p=3');
     await expect(page.locator('#q-label')).toHaveText('Pilier 3 sur 4');
-    await page.goto('?s=02&p=1');
+    await page.goto('?s=03&p=1');
     await expect(page.locator('#q-label')).toHaveText('Pillar 1 of 4');
   });
 
   test('TO-04. two tabs, two series: each answer in its series, each tab in its language', async ({ page, context }) => {
     await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=1&p=1');
     const other = await context.newPage();
-    await other.goto('?s=2&p=2');
+    await other.goto('?s=3&p=2');
     await expect(page.locator('#q-label')).toHaveText('Pilier 1 sur 4');
     await expect(other.locator('#q-label')).toHaveText('Pillar 2 of 4');
     await page.fill('#answer', 'A');
     await other.fill('#answer', 'B');
     await page.click('#submit-btn');
     await other.click('#submit-btn');
-    await expect.poll(async () => (await sheet(page)).map((r) => `${r[3]}:${r[SERIES]}`).sort(), { timeout: 8000 }).toEqual(['A:1', 'B:2']);
+    await expect.poll(async () => (await sheet(page)).map((r) => `${r[3]}:${r[SERIES]}`).sort(), { timeout: 8000 }).toEqual(['A:1', 'B:3']);
   });
 
   test('TO-01. double tap on submit: one answer', async ({ page }) => {
-    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2&p=1');
+    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=1');
     await page.fill('#answer', 'once');
     await page.evaluate(() => { const b = document.getElementById('submit-btn'); b.click(); b.click(); });
     await visible(page, 'passport');
@@ -317,7 +317,7 @@ test.describe('series', () => {
 
 test.describe('questions from the Sheet', () => {
   test('QU-10. first scan, no answer from Cloudflare: loading at most 5 s, then the default question', async ({ page }) => {
-    await seed(page, { wqw_mock_questions: recetteQuestions, wqw_mock_questions_delay: 8000, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2&p=1');
+    await seed(page, { wqw_mock_questions: recetteQuestions, wqw_mock_questions_delay: 8000, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=1');
     const t0 = Date.now();
     await visible(page, 'loading');
     await expect(page.locator('#loading-text')).toHaveText(EN.loadingQuestion);
@@ -332,36 +332,36 @@ test.describe('questions from the Sheet', () => {
   });
 
   test('QU-11. questions already on the phone, Cloudflare unreachable: question at once', async ({ page }) => {
-    await seed(page, { wqw_questions: { q: { 2: { 1: '[S2P1] kept on the phone' } } }, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2&p=1&mockfail=1');
+    await seed(page, { wqw_questions: { q: { 3: { 1: '[S3P1] kept on the phone' } } }, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=1&mockfail=1');
     await visible(page, 'question');
-    await expect(page.locator('#q-text')).toHaveText('[S2P1] kept on the phone');
+    await expect(page.locator('#q-text')).toHaveText('[S3P1] kept on the phone');
   });
 
   test('QU-12. a newer question replaces the one on screen only while nothing is typed', async ({ page }) => {
-    const v1 = { q: { 2: { 1: '[S2P1] v1' } } };
-    const v2 = { 2: { 1: '[S2P1] v2' } };
+    const v1 = { q: { 3: { 1: '[S3P1] v1' } } };
+    const v2 = { 3: { 1: '[S3P1] v2' } };
     // A: the participant has started writing: v1 stays and is the question saved
-    await seed(page, { wqw_questions: v1, wqw_mock_questions: v2, wqw_mock_questions_delay: 2000, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2&p=1');
-    await expect(page.locator('#q-text')).toHaveText('[S2P1] v1');
+    await seed(page, { wqw_questions: v1, wqw_mock_questions: v2, wqw_mock_questions_delay: 2000, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=1');
+    await expect(page.locator('#q-text')).toHaveText('[S3P1] v1');
     await page.fill('#answer', 'abc');
     await page.waitForTimeout(2600);
-    await expect(page.locator('#q-text')).toHaveText('[S2P1] v1');
+    await expect(page.locator('#q-text')).toHaveText('[S3P1] v1');
     await page.click('#submit-btn');
     await expect.poll(async () => (await sheet(page)).length).toBe(1);
-    expect((await sheet(page))[0][QUESTION]).toBe('[S2P1] v1');
+    expect((await sheet(page))[0][QUESTION]).toBe('[S3P1] v1');
     // B: nothing typed: v2 replaces v1
-    await seed(page, { wqw_questions: v1, wqw_mock_questions: v2, wqw_mock_questions_delay: 2000, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2&p=1');
-    await expect(page.locator('#q-text')).toHaveText('[S2P1] v1');
-    await expect(page.locator('#q-text')).toHaveText('[S2P1] v2', { timeout: 4000 });
+    await seed(page, { wqw_questions: v1, wqw_mock_questions: v2, wqw_mock_questions_delay: 2000, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=1');
+    await expect(page.locator('#q-text')).toHaveText('[S3P1] v1');
+    await expect(page.locator('#q-text')).toHaveText('[S3P1] v2', { timeout: 4000 });
   });
 
   test('QU-02/07. empty question gives the default one; line breaks kept, HTML shown as text', async ({ page }) => {
-    const q = { 1: { 4: '' }, 3: { 4: '   ' }, 2: { 2: 'Line one\nLine two <b>bold</b>' } };
+    const q = { 1: { 4: '' }, 3: { 4: '   ', 2: 'Line one\nLine two <b>bold</b>' } };
     await seed(page, { wqw_mock_questions: q, wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=4');
     await expect(page.locator('#q-text')).toHaveText(EN.defaultQuestion);
     await page.goto('?s=1&p=4');
     await expect(page.locator('#q-text')).toHaveText(FR.defaultQuestion);
-    await page.goto('?s=2&p=2');
+    await page.goto('?s=3&p=2');
     await expect(page.locator('#q-text')).toHaveText('Line one\nLine two <b>bold</b>');
     expect(await page.locator('#q-text b').count()).toBe(0);
     expect(await page.locator('#q-text').evaluate((el) => el.getClientRects()[0].height > 40)).toBe(true); // two lines
@@ -439,7 +439,7 @@ test.describe('French (series 1)', () => {
     test('SE-06/FR-06. no series: phone language; English series stay English', async ({ page }) => {
       await page.goto('');
       await expect(page.locator('#screen-welcome h1')).toHaveText(FR.welcomeTitle);
-      await page.goto('?s=2&p=1');
+      await page.goto('?s=3&p=1');
       await expect(page.locator('#screen-welcome h1')).toHaveText(EN.welcomeTitle);
     });
   });
@@ -457,7 +457,7 @@ test.describe('several countries', () => {
   test.use({ timezoneId: 'America/New_York' });
   test('PA-04. dates are the participant\'s local date', async ({ page }) => {
     await page.clock.setFixedTime(new Date('2026-11-07T01:00:00Z')); // 6 Nov, 20:00 in New York
-    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=2&p=1');
+    await seed(page, { wqw_state: { email: EMAIL, stars: {}, pending: [] } }, '?s=3&p=1');
     await page.fill('#answer', 'From New York');
     await page.click('#submit-btn');
     await expect(page.locator('.node.on .date')).toHaveText('6 Nov');
@@ -465,7 +465,7 @@ test.describe('several countries', () => {
   });
 });
 
-for (const { lang, s } of [{ lang: 'en', s: 2 }, { lang: 'fr', s: 1 }]) {
+for (const { lang, s } of [{ lang: 'en', s: 3 }, { lang: 'fr', s: 1 }]) {
   for (const scheme of ['light', 'dark']) {
     test.describe(`screenshots (${lang}, ${scheme})`, () => {
       test.use({ colorScheme: scheme });
