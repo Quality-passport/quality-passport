@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/screens.css">
 <link rel="stylesheet" href="css/celebration.css">
+<link rel="stylesheet" href="css/quiz.css">
 <script type="module" src="js/main.js"></script>
 </head>
 <body>
@@ -69,6 +70,33 @@
   </div>
 </section>
 
+<!-- Quiz (series 2): one multiple-choice question per pillar, one try -->
+<section id="screen-quiz" class="screen" hidden>
+  <div class="page tight-top">
+    <div class="topbar">
+      <button class="link" type="button" data-go="passport"><span aria-hidden="true">←</span> <span data-t="myPassport"></span></button>
+      <div class="mini-stars" id="qz-mini-stars" aria-hidden="true"></div>
+    </div>
+    <div class="pillar-head quiz-head">
+      <div class="ring" id="qz-icon"></div>
+      <div class="stack-2">
+        <p class="eyebrow accent" id="qz-label"></p>
+        <h1 tabindex="-1" id="qz-name"></h1>
+      </div>
+    </div>
+    <form id="quiz-form" class="quiz-form" novalidate>
+      <p id="qz-question" class="question-text"></p>
+      <p id="qz-intro" class="muted small"></p>
+      <div class="qz-options" id="qz-options" role="radiogroup" aria-labelledby="qz-question"></div>
+      <div class="qz-bottom">
+        <p id="qz-verdict" class="qz-verdict" role="status" aria-live="polite" hidden></p>
+        <button id="qz-confirm" class="btn" type="submit" disabled data-t="quizConfirm"></button>
+        <button id="qz-next" class="btn" type="button" hidden data-t="quizContinue"></button>
+      </div>
+    </form>
+  </div>
+</section>
+
 <!-- Passport -->
 <section id="screen-passport" class="screen" hidden>
   <div class="page">
@@ -96,6 +124,11 @@
         <p class="complete-title" data-t="completeTitle"></p>
         <p class="muted" data-t="completeSubtitle"></p>
         <button class="btn" id="p-open-celebration" type="button" data-t="openPassport"></button>
+      </div>
+      <div class="complete" id="p-quiz-done" hidden>
+        <p class="complete-title" data-t="quizDoneTitle"></p>
+        <p class="muted" id="p-quiz-score"></p>
+        <button class="btn" id="p-open-result" type="button" data-t="seeResult"></button>
       </div>
     </div>
   </div>
@@ -134,6 +167,23 @@
       </div>
       <p data-sync class="on-dark" role="status" aria-live="polite" hidden></p>
     </div>
+  </div>
+</section>
+
+<!-- End of the quiz with fewer than 4 stars: the score -->
+<section id="screen-result" class="screen" hidden>
+  <div class="page result">
+    <p class="eyebrow center" data-config="EVENT"></p>
+    <div class="result-body">
+      <img class="mark result-mark" data-logo alt="">
+      <div class="result-stars" id="r-stars" aria-hidden="true"></div>
+      <div class="stack-8 center">
+        <h1 tabindex="-1" id="r-title"></h1>
+        <p class="visually-hidden" id="r-score"></p>
+        <p class="lead" data-t="resultSubtitle"></p>
+      </div>
+    </div>
+    <button class="btn" id="r-back" type="button" data-t="resultBack"></button>
   </div>
 </section>
 

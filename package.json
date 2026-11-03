@@ -5,9 +5,9 @@
   "description": "World Quality Week Quality Passport: static web app (GitHub Pages) + Cloudflare Worker (D1, KV) + Google Apps Script + Google Sheet",
   "scripts": {
     "serve": "node tests/server.mjs",
-    "test": "node --test --no-warnings tests/code-gs.test.mjs tests/worker.test.mjs && playwright test",
+    "test": "node --test --no-warnings tests/code-gs.test.mjs tests/worker.test.mjs tests/quiz-backend.test.mjs && playwright test",
     "test:ui": "playwright test",
-    "test:backend": "node --test --no-warnings tests/code-gs.test.mjs tests/worker.test.mjs",
+    "test:backend": "node --test --no-warnings tests/code-gs.test.mjs tests/worker.test.mjs tests/quiz-backend.test.mjs",
     "qr": "node qr/generate.mjs",
     "golden:take": "GOLDEN=take node --test --no-warnings tests/golden.test.mjs && GOLDEN=1 playwright test tests/golden.spec.js --update-snapshots",
     "golden:check": "GOLDEN=check node --test --no-warnings tests/golden.test.mjs && GOLDEN=1 playwright test tests/golden.spec.js"

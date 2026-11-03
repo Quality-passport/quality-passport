@@ -57,6 +57,7 @@
   --primary: var(--ipsen-navy);
   --star: #e3a900;
   --danger: #b3261e;
+  --ok: #1e7a4f;      /* quiz: the right answer */
 
   --radius-sm: 8px;
   --radius: 12px;

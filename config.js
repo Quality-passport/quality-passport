@@ -6,8 +6,11 @@
      On localhost the mock is always used so tests never write real data; add ?live=1
      to use the real API locally.
    - SERIES: each series of QR codes (?s=1, 2, 3) has its own questions and language.
-   - The questions themselves are written in the Google Sheet (tab "Questions"), not here.
-     TEXT.<lang>.defaultQuestion is shown when a question is empty or not available.
+   - Open-question series (1 and 3): the questions are written in the Google Sheet (tab "Questions"),
+     not here. TEXT.<lang>.defaultQuestion is shown when a question is empty or not available.
+   - Quiz series (mode: 'quiz', series 2): multiple-choice questions written below in QUIZ.
+     A right answer earns the star; a wrong one does not, and the pillar cannot be played again.
+     Back to open questions: delete the line mode: 'quiz' (before the event only).
    - Placeholder texts ("TODO", "lorem ipsum"), a text missing in one language and an empty
      API_URL are reported as a warning in the browser console (never shown to participants).
    ========================================================================== */
@@ -22,8 +25,54 @@ export const CONFIG = {
   // Series of QR codes, one per location. The series sets the language of the whole app.
   SERIES: {
     1: { lang: 'fr' },
-    2: { lang: 'en' },
+    2: { lang: 'en', mode: 'quiz' },
     3: { lang: 'en' },
+  },
+  // Quiz of each quiz series: one question per pillar, options shown A to D, `answer` = the right letter.
+  // Series 2: questions and answers given by the Quality team on 3 Nov 2026.
+  QUIZ: {
+    2: {
+      1: {
+        question: 'How does Quality help ensure business continuity?',
+        options: {
+          A: 'By assessing risks, planning preventively and collaborating across functions',
+          B: 'By reducing product prices',
+          C: 'By reacting only after disruptions occur',
+          D: 'By increasing the number of approvals required',
+        },
+        answer: 'A',
+      },
+      2: {
+        question: 'What is the main benefit of effective complaint management?',
+        options: {
+          A: 'Reducing the number of patients using the product',
+          B: 'Eliminating the need for documentation',
+          C: 'Shortening regulatory requirements',
+          D: 'Learning from feedback to improve quality, compliance and patient protection',
+        },
+        answer: 'D',
+      },
+      3: {
+        question: 'Why are approved templates valuable?',
+        options: {
+          A: 'They make documents longer',
+          B: 'They replace content review',
+          C: 'They reduce errors, save time and simplify reviews',
+          D: 'They eliminate the need for training',
+        },
+        answer: 'C',
+      },
+      4: {
+        question: 'At what point should Quality become involved in an innovative (GxP) project?',
+        options: {
+          A: 'When the idea is ready to launch',
+          B: 'When a problem occurs',
+          C: 'From the start',
+          D: 'As the final checkpoint in the flow',
+        },
+        answer: 'C',
+      },
+    },
   },
   // Pillar names are programme names: the same in every language.
   PILLARS: [
@@ -88,6 +137,28 @@ export const CONFIG = {
       docCertifies: 'This certifies that',
       docLine: 'has earned the four stars of {program}',
       docCompleted: 'Completed on {date}',
+      // Quiz (series 2): welcome rule, question screen, passport, end screen with fewer than 4 stars
+      quizWelcomeSubtitle: 'Four pillars, one question each, one try. Every right answer earns a star.',
+      quizIntro: 'One try. Choose carefully.',
+      quizOption: 'Answer {letter}',         // read by screen readers before the option
+      quizConfirm: 'Confirm my answer',
+      quizRight: 'Right answer. Star earned.',
+      quizWrong: 'Not quite. The right answer is {letter}.',
+      quizContinue: 'Continue',
+      answeredNoStar: 'Answered, no star',   // passport card after a wrong answer
+      alreadyAnswered: 'Already answered',   // passport card when a pillar answered wrongly is scanned again
+      noStar: 'No star',                     // under that pillar on the passport
+      pillarMissedLabel: '{pillar}: answered, no star',   // read by screen readers
+      quizDoneTitle: 'Quiz complete',
+      quizDoneScore: '{n} of 4 stars',
+      seeResult: 'See my result',
+      // End screen: never a "next time", a pillar is played once
+      resultTitle0: 'Four pillars explored.',
+      resultTitle1: 'Four pillars. One star.',
+      resultTitle2: 'Four pillars. Two stars.',
+      resultTitle3: 'Four pillars. Three stars.',
+      resultSubtitle: 'Thank you for taking part.\nQuality is a habit, not a score.',
+      resultBack: 'See my passport',
     },
     fr: {
       pageTitle: 'Passeport Qualité',
@@ -133,6 +204,27 @@ export const CONFIG = {
       docCertifies: 'Ce passeport certifie que',
       docLine: 'a obtenu les quatre étoiles de {program}',
       docCompleted: 'Obtenu le {date}',
+      // Quiz : en français seulement si un participant de la série 2 scanne ensuite un QR de la série 1
+      quizWelcomeSubtitle: 'Quatre piliers, une question par pilier, un seul essai. Chaque bonne réponse rapporte une étoile.',
+      quizIntro: 'Un seul essai. Choisissez bien.',
+      quizOption: 'Réponse {letter}',
+      quizConfirm: 'Valider ma réponse',
+      quizRight: 'Bonne réponse. Étoile gagnée.',
+      quizWrong: 'Pas tout à fait. La bonne réponse est la {letter}.',
+      quizContinue: 'Continuer',
+      answeredNoStar: 'Répondu, sans étoile',
+      alreadyAnswered: 'Déjà répondu',
+      noStar: 'Sans étoile',
+      pillarMissedLabel: '{pillar} : répondu, sans étoile',
+      quizDoneTitle: 'Quiz terminé',
+      quizDoneScore: '{n} étoiles sur 4',
+      seeResult: 'Voir mon résultat',
+      resultTitle0: 'Quatre piliers explorés.',
+      resultTitle1: 'Quatre piliers. Une étoile.',
+      resultTitle2: 'Quatre piliers. Deux étoiles.',
+      resultTitle3: 'Quatre piliers. Trois étoiles.',
+      resultSubtitle: 'Merci de votre participation.\nLa qualité est une habitude, pas un score.',
+      resultBack: 'Voir mon passeport',
     },
   },
 };

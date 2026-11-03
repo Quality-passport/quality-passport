@@ -4,6 +4,7 @@ import { CONFIG } from '../config.js';
 export const params = new URLSearchParams(location.search);
 export const IDS = [1, 2, 3, 4];
 export const SERIES_IDS = [1, 2, 3];
+export const LETTERS = ['A', 'B', 'C', 'D']; // options of a quiz question
 // Same rule as apps-script/Code.gs. First char cannot start a spreadsheet formula.
 export const EMAIL_RE = /^[^@\s=+\-][^@\s]*@[^@\s]+\.[^@\s]+$/;
 export const IS_LOCAL = location.protocol === 'file:' ||
@@ -22,6 +23,16 @@ export function pillarParam() {
 export function seriesParam() {
   const s = Number(params.get('s'));
   return SERIES_IDS.includes(s) ? s : null;
+}
+
+/** True for a quiz series (multiple choice, one try per pillar): CONFIG.SERIES[s].mode === 'quiz'. */
+export function isQuiz(s) {
+  return CONFIG.SERIES[s]?.mode === 'quiz';
+}
+
+/** Quiz question of series s, pillar p ({ question, options: {A..D}, answer }), or null (open question). */
+export function quizOf(s, p) {
+  return (isQuiz(s) && CONFIG.QUIZ?.[s]?.[p]) || null;
 }
 
 /** Removes ?p= from the address bar so a reload shows the passport, keeps other params. */

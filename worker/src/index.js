@@ -1,7 +1,11 @@
 // Quality Passport API (Cloudflare Worker + D1 + KV).
-// - POST /answer   {email, s, p, question, answer, id} -> {ok:true[, duplicate:true]} | {ok:false, error:'invalid'|'busy'}
+// - POST /answer   {email, s, p, question, answer, id[, choice, correct]} -> {ok:true[, duplicate:true]} | {ok:false, error:'invalid'|'busy'}
 //                  s (series 1-3) and question are absent in answers queued by an older version: accepted.
-// - GET  /stars?email=                    -> {stars: {"1": "ISO date of first answer", ...}}  (all series: one passport)
+//                  choice ('A'-'D') and correct (true/false): quiz answers only. The first answer of an email
+//                  to a pillar counts: a quiz answer is ignored (reply "duplicate") once that pillar has an answer.
+// - GET  /stars?email=                    -> {stars: {"1": "ISO date of first answer", ...}[, missed: {"2": "ISO date"}]}
+//                  all series: one passport. A wrong quiz answer gives no star: its pillar is "missed"
+//                  (key present only when there is one, so the reply is unchanged for open questions).
 // - GET  /questions                       -> {ok:true, questions: {"1": {"1": "text", ...}, ...}}
 //                  read from KV, a copy served close to each participant; Google is never called here.
 // - every minute: new answers are copied to the Google Sheet in one batch, and the Sheet's
@@ -13,6 +17,7 @@ const MAX_ANSWER = 2000;
 const MAX_QUESTION = 500;
 const SERIES = [1, 2, 3];
 const PILLARS = [1, 2, 3, 4];
+const LETTERS = ['A', 'B', 'C', 'D'];
 const SYNC_BATCH = 400;
 const QUESTIONS_KEY = 'questions';
 
@@ -56,27 +61,41 @@ async function saveAnswer(request, env) {
   const answer = String(d.answer || '').trim().slice(0, MAX_ANSWER);
   const question = String(d.question || '').trim().slice(0, MAX_QUESTION) || null;
   const id = String(d.id || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
-  if (!id || !EMAIL_RE.test(email) || !PILLARS.includes(p) || !answer || (s !== null && !SERIES.includes(s))) {
+  const quiz = d.correct != null; // a quiz answer carries its verdict
+  if (!id || !EMAIL_RE.test(email) || !PILLARS.includes(p) || !answer || (s !== null && !SERIES.includes(s))
+    || (quiz && (typeof d.correct !== 'boolean' || !LETTERS.includes(d.choice)))) {
     return json({ ok: false, error: 'invalid' }, 400);
   }
-  const r = await env.DB
-    .prepare('INSERT OR IGNORE INTO responses (id, ts, email, pillar, answer, series, question) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
-    .bind(id, new Date().toISOString(), email, p, answer, s, question)
-    .run();
+  const r = quiz
+    // One statement, so two answers arriving together cannot both get in.
+    ? await env.DB
+      .prepare('INSERT OR IGNORE INTO responses (id, ts, email, pillar, answer, series, question, choice, correct) '
+        + 'SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9 WHERE NOT EXISTS (SELECT 1 FROM responses WHERE email = ?3 AND pillar = ?4)')
+      .bind(id, new Date().toISOString(), email, p, answer, s, question, d.choice, d.correct ? 1 : 0)
+      .run()
+    : await env.DB
+      .prepare('INSERT OR IGNORE INTO responses (id, ts, email, pillar, answer, series, question) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
+      .bind(id, new Date().toISOString(), email, p, answer, s, question)
+      .run();
   return json(r.meta.changes ? { ok: true } : { ok: true, duplicate: true });
 }
 
 async function getStars(url, env) {
   const email = String(url.searchParams.get('email') || '').trim().toLowerCase();
   const stars = {};
+  const missed = {};
   if (email) {
+    // A star: the first answer that is not a wrong quiz answer. Missed: only wrong quiz answers.
     const { results } = await env.DB
-      .prepare('SELECT pillar, MIN(ts) AS ts FROM responses WHERE email = ?1 GROUP BY pillar')
+      .prepare('SELECT pillar, MIN(CASE WHEN correct = 0 THEN NULL ELSE ts END) AS star, MIN(ts) AS first FROM responses WHERE email = ?1 GROUP BY pillar')
       .bind(email)
       .all();
-    for (const row of results) stars[row.pillar] = row.ts;
+    for (const row of results) {
+      if (row.star) stars[row.pillar] = row.star;
+      else missed[row.pillar] = row.first;
+    }
   }
-  return json({ stars });
+  return json(Object.keys(missed).length ? { stars, missed } : { stars });
 }
 
 /** Before the first copy from the Sheet there are no questions: the app shows its default ones. */
@@ -130,7 +149,7 @@ async function refreshQuestions(env) {
 async function syncToSheet(env) {
   if (!env.SHEET_URL) return;
   const { results } = await env.DB
-    .prepare('SELECT id, ts, email, pillar, answer, series, question FROM responses WHERE synced = 0 ORDER BY ts LIMIT ?1')
+    .prepare('SELECT id, ts, email, pillar, answer, series, question, choice, correct FROM responses WHERE synced = 0 ORDER BY ts LIMIT ?1')
     .bind(SYNC_BATCH)
     .all();
   if (!results.length) return;

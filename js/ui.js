@@ -1,11 +1,13 @@
 // Shared UI helpers: static texts (in the page's language), theme, config checks, toast, star icon.
 import { CONFIG } from '../config.js';
-import { IS_LOCAL, MOCK, SERIES_IDS } from './env.js';
-import { LANG } from './lang.js';
+import { IS_LOCAL, LETTERS, MOCK, SERIES_IDS, isQuiz } from './env.js';
+import { LANG, PAGE_SERIES } from './lang.js';
 import { $ } from './util.js';
 
-/** Interface texts in the language of this page (see lang.js). */
-export const T = CONFIG.TEXT[LANG];
+const TEXTS = CONFIG.TEXT[LANG];
+/** Interface texts in the language of this page (see lang.js). A quiz series announces its rule
+ *  (one try, right answers only) on the welcome screen; everything else is shared. */
+export const T = isQuiz(PAGE_SERIES) ? { ...TEXTS, welcomeSubtitle: TEXTS.quizWelcomeSubtitle } : TEXTS;
 
 export function applyTheme() {
   const map = { primary: '--primary', accent: '--accent', surface: '--surface', star: '--star' };
@@ -30,6 +32,12 @@ export function checkConfig() {
   if (ids !== '1,2,3,4') problems.push('PILLARS must have ids 1 to 4');
   if (CONFIG.PILLARS.some((p) => placeholder.test(p.name))) problems.push('pillar names are placeholders');
   SERIES_IDS.forEach((s) => { if (!CONFIG.TEXT[CONFIG.SERIES[s]?.lang]) problems.push(`series ${s} has no texts for its language`); });
+  SERIES_IDS.filter(isQuiz).forEach((s) => CONFIG.PILLARS.forEach(({ id }) => {
+    const q = CONFIG.QUIZ?.[s]?.[id];
+    if (!q?.question || !LETTERS.every((l) => q.options?.[l]) || !LETTERS.includes(q.answer)) {
+      problems.push(`quiz of series ${s}, pillar ${id}: question, options A-D and answer needed (open question shown instead)`);
+    }
+  }));
   const keys = Object.keys(CONFIG.TEXT.en);
   Object.entries(CONFIG.TEXT).forEach(([lang, texts]) => {
     const missing = keys.filter((k) => !texts[k]);

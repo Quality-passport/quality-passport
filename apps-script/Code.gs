@@ -12,12 +12,15 @@
  *   Questions          one row per series × pillar: Série | Langue | Pilier | Nom du pilier | Question.
  *                      Rows are found by their Série and Pilier values, so they can be sorted or moved.
  *   Responses S1/S2/S3 answers of each series: Timestamp | Email | Pillar | Question | Answer | ClientId
+ *                      Quiz series (series 2): a column Correct (Yes/No) is added at the end with the first
+ *                      quiz answer; Answer holds the letter and the option chosen ("C. They reduce errors…").
  *   Responses          answers without series (sent before the series existed, or by an older app)
  *   Stars              one row per email, all series: Email | Series | 1 | 2 | 3 | 4 | Total (values, rebuilt)
+ *                      ★ = star, ✗ = quiz pillar answered wrongly (no star), Total = number of ★
  *   Columns are found by their header name, so they can be moved without breaking anything.
  *
  * Routes
- *   POST {action:'batch', rows:[{id, ts, email, pillar, answer, series, question}]} -> {ok:true, added:n}  (from the Worker)
+ *   POST {action:'batch', rows:[{id, ts, email, pillar, answer, series, question[, choice, correct]}]} -> {ok:true, added:n}  (from the Worker)
  *   POST {email, p, answer, id[, s, question]}     -> {ok:true[, duplicate:true]} | {ok:false, error:'invalid'|'busy'}  (older direct calls)
  *   GET  ?action=questions                         -> {ok:true, rows:n, questions:{"1":{"1":"text"}}} | {ok:false, error}
  *   GET  ?email=...                                -> {stars: {"1": "ISO date of first answer", ...}}
@@ -87,7 +90,9 @@ function saveBatch_(rows) {
       (byTab[name] = byTab[name] || []).push(row);
     });
     Object.keys(byTab).forEach(function (name) {
-      appendRows_(responseTab_(ss, name), byTab[name]);
+      const sheet = responseTab_(ss, name);
+      if (byTab[name].some(function (row) { return row.correct !== null; })) ensureColumn_(sheet, 'Correct');
+      appendRows_(sheet, byTab[name]);
       added += byTab[name].length;
     });
     SpreadsheetApp.flush();
@@ -110,7 +115,14 @@ function clean_(r) {
   const id = String(r.id || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 40);
   if (!EMAIL_RE.test(email) || PILLARS.indexOf(p) === -1 || !answer || (s !== null && SERIES.indexOf(s) === -1)) return null;
   const ts = r.ts ? new Date(r.ts) : new Date();
-  return { id: id, ts: isNaN(ts) ? new Date() : ts, email: email, pillar: p, series: s, answer: safe_(answer), question: safe_(question) };
+  return { id: id, ts: isNaN(ts) ? new Date() : ts, email: email, pillar: p, series: s, answer: safe_(answer), question: safe_(question), correct: verdict_(r.correct) };
+}
+
+/** Verdict of a quiz answer: true (right), false (wrong), null (open question, no verdict). */
+function verdict_(v) {
+  if (v === true || v === 1 || v === '1') return true;
+  if (v === false || v === 0 || v === '0') return false;
+  return null;
 }
 
 /** Blocks formula injection: the text is shown, never run. */
@@ -126,10 +138,19 @@ function tabName_(row) {
 function appendRows_(sheet, rows) {
   const head = header_(sheet);
   const values = rows.map(function (row) {
-    const byName = { timestamp: row.ts, email: row.email, pillar: row.pillar, question: row.question, answer: row.answer, clientid: row.id };
+    const byName = { timestamp: row.ts, email: row.email, pillar: row.pillar, question: row.question, answer: row.answer, clientid: row.id,
+      correct: row.correct === null ? '' : (row.correct ? 'Yes' : 'No') };
     return head.map(function (h) { return h in byName ? byName[h] : ''; });
   });
   sheet.getRange(sheet.getLastRow() + 1, 1, values.length, head.length).setValues(values);
+}
+
+/** Adds a column at the end of the header when it is missing (found by name, so it can be moved by hand). */
+function ensureColumn_(sheet, title) {
+  if (header_(sheet).indexOf(norm_(title)) >= 0) return;
+  const col = sheet.getLastColumn() + 1;
+  sheet.getRange(1, col, 1, 1).setValues([[title]]).setFontWeight('bold');
+  sheet.setColumnWidth(col, 90);
 }
 
 /** Header row, normalised: lower case, no accents, no spaces ("Nom du pilier" -> "nomdupilier"). */
@@ -149,18 +170,21 @@ function responseTabs_(ss) {
     .filter(function (sheet) { return sheet; });
 }
 
-/** Rows of an answers tab as objects {email, pillar, ts, id}, located by header name. */
+/** Rows of an answers tab as objects {email, pillar, ts, id, correct}, located by header name.
+ *  correct: false for a wrong quiz answer ("No"), true ("Yes"), null without a verdict. */
 function readAnswers_(sheet) {
   const values = sheet.getDataRange().getValues();
   if (values.length < 2) return [];
   const head = values[0].map(norm_);
-  const c = { email: head.indexOf('email'), pillar: head.indexOf('pillar'), ts: head.indexOf('timestamp'), id: head.indexOf('clientid') };
+  const c = { email: head.indexOf('email'), pillar: head.indexOf('pillar'), ts: head.indexOf('timestamp'), id: head.indexOf('clientid'), correct: head.indexOf('correct') };
   return values.slice(1).map(function (r) {
+    const v = c.correct < 0 ? '' : String(r[c.correct]).trim().toLowerCase();
     return {
       email: c.email < 0 ? '' : String(r[c.email]).toLowerCase(),
       pillar: c.pillar < 0 ? NaN : Number(r[c.pillar]),
       ts: c.ts < 0 ? '' : (r[c.ts] instanceof Date ? r[c.ts].toISOString() : String(r[c.ts])),
       id: c.id < 0 ? '' : String(r[c.id]),
+      correct: v === 'no' ? false : v === 'yes' ? true : null,
     };
   });
 }
@@ -199,7 +223,7 @@ function doGet(e) {
   if (email) {
     responseTabs_(SpreadsheetApp.getActive()).forEach(function (sheet) {
       readAnswers_(sheet).forEach(function (a) {
-        if (a.email !== email || PILLARS.indexOf(a.pillar) === -1) return;
+        if (a.email !== email || PILLARS.indexOf(a.pillar) === -1 || a.correct === false) return;
         if (!stars[a.pillar] || a.ts < stars[a.pillar]) stars[a.pillar] = a.ts;
       });
     });
@@ -299,8 +323,9 @@ function refreshStars_() {
 }
 
 /** Stars = one row per email, all series together (one passport): the series answered in,
- *  a star per pillar answered in any answers tab, and the total. Plain values (no formulas),
- *  so it works whatever the Sheet's language. Duplicates count once. */
+ *  a star (★) per pillar answered in any answers tab, except a quiz pillar answered wrongly (✗),
+ *  and the number of stars. Plain values (no formulas), so it works whatever the Sheet's language.
+ *  Duplicates count once. */
 function rebuildStars_() {
   const ss = SpreadsheetApp.getActive();
   const byEmail = {};
@@ -309,16 +334,17 @@ function rebuildStars_() {
     const series = name === RESPONSES ? null : Number(name.slice(-1));
     readAnswers_(sheet).forEach(function (a) {
       if (!a.email || PILLARS.indexOf(a.pillar) === -1) return;
-      const e = byEmail[a.email] = byEmail[a.email] || { pillars: {}, series: {} };
-      e.pillars[a.pillar] = true;
+      const e = byEmail[a.email] = byEmail[a.email] || { pillars: {}, played: {}, series: {} };
+      e.played[a.pillar] = true;
+      if (a.correct !== false) e.pillars[a.pillar] = true;
       if (series) e.series[series] = true;
     });
   });
   const out = Object.keys(byEmail).sort().map(function (email) {
     const e = byEmail[email];
-    const cells = PILLARS.map(function (p) { return e.pillars[p] ? '★' : ''; });
+    const cells = PILLARS.map(function (p) { return e.pillars[p] ? '★' : e.played[p] ? '✗' : ''; });
     const series = Object.keys(e.series).sort().join(', ');
-    return [email, series].concat(cells, [cells.filter(String).length]);
+    return [email, series].concat(cells, [cells.filter(function (c) { return c === '★'; }).length]);
   });
   let stars = ss.getSheetByName(STARS);
   if (!stars) {

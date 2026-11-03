@@ -1,7 +1,7 @@
 // Screen registry and routing. Screens register themselves; navigation goes through go().
-import { pillarParam, seriesParam } from './env.js';
+import { pillarParam, quizOf, seriesParam } from './env.js';
 import { haveQuestions, waitForQuestions } from './questions.js';
-import { state, starCount, hasStar } from './state.js';
+import { state, starCount, hasPlayed, quizOver } from './state.js';
 import { T } from './ui.js';
 
 // First question on a phone that has no questions yet: wait for them at most this long,
@@ -25,22 +25,25 @@ export function go(name, opts) {
 
 /** Decides the screen from the URL (?s=S&p=N) and the local state.
  *  A question opens only with a valid series AND pillar; without a series, ?p= is ignored.
- *  One passport for all series: a pillar starred in any series shows the passport. */
+ *  One passport for all series: a pillar played in any series (star, or quiz answered wrongly)
+ *  shows the passport, never its question again. A quiz series opens its multiple-choice question. */
 export function route() {
   if (!state.email) return go('welcome');
   const s = seriesParam();
   const p = s ? pillarParam() : null;
-  if (p && !hasStar(p)) {
+  if (p && !hasPlayed(p)) {
+    if (quizOf(s, p)) return go('quiz', { series: s, pillar: p });
     if (haveQuestions()) return go('question', { series: s, pillar: p });
     go('loading', { text: T.loadingQuestion });
     waitForQuestions(QUESTION_WAIT_MS).then(() => {
       if (!$loadingShown()) return; // the participant moved on meanwhile
-      if (hasStar(p)) return route(); // answered in another tab meanwhile
+      if (hasPlayed(p)) return route(); // answered in another tab meanwhile
       go('question', { series: s, pillar: p });
     });
     return;
   }
   if (starCount() === 4 && !state.celebrated) return go('celebration');
+  if (quizOver() && !state.resultShown) return go('result');
   go('passport', { already: p });
 }
 

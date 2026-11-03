@@ -1,7 +1,7 @@
 // Offline-first sync: answers are queued locally and sent in the background.
 // A failed send stays in the queue and is retried later, silently.
 import { backend } from './backend/index.js';
-import { state, removePending, mergeStars } from './state.js';
+import { state, removePending, mergeRemote } from './state.js';
 import { withTimeout } from './util.js';
 
 const RETRY_EVERY_MS = 30000;
@@ -53,13 +53,13 @@ export function startAutoFlush() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) lastChance(); });
 }
 
-/** Restores stars earned in another browser. Resolves to true when the backend answered.
- *  Generous timeout for poor event wifi. */
+/** Restores stars earned in another browser, and quiz pillars answered wrongly there.
+ *  Resolves to true when the backend answered. Generous timeout for poor event wifi. */
 export async function restoreStars(timeoutMs = 15000) {
   try {
-    const before = JSON.stringify(state.stars);
-    mergeStars(await withTimeout(backend.stars(state.email), timeoutMs));
-    if (JSON.stringify(state.stars) !== before) window.dispatchEvent(new Event('wqw:stars'));
+    const before = JSON.stringify([state.stars, state.missed]);
+    mergeRemote(await withTimeout(backend.stars(state.email), timeoutMs));
+    if (JSON.stringify([state.stars, state.missed]) !== before) window.dispatchEvent(new Event('wqw:stars'));
     return true;
   } catch {
     return false; // offline or slow: keep the local state

@@ -1,0 +1,54 @@
+/* Quiz (series 2) and its end screen. Same calm language as the rest: hairlines, navy ink,
+   one mark and one sentence for the verdict, colour never the only sign. */
+
+/* Compact head: the question and its four options fit an iPhone 13 without scrolling */
+.quiz-head { padding: 10px 0 14px; }
+.quiz-form { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-top: 16px; }
+.qz-options { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }
+
+.qz-option {
+  position: relative; display: flex; align-items: flex-start; gap: 10px;
+  min-height: 44px; padding: 10px 12px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  font-size: 15px; line-height: 1.3; color: var(--ink); cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, opacity .2s;
+}
+.qz-option input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; } /* the whole card is the control */
+.qz-letter {
+  flex: none; width: 22px; height: 22px; margin-top: -1px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line-strong); font-size: 12px; font-weight: 700; color: var(--muted);
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+.qz-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.qz-mark { flex: none; width: 16px; margin-top: 1px; font-size: 14px; font-weight: 700; text-align: center; }
+.qz-option:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.qz-option:active:not(.right):not(.wrong) { transform: scale(.995); }
+
+.qz-option.selected { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.qz-option.selected .qz-letter { background: var(--ink); border-color: var(--ink); color: #ffffff; }
+
+/* Verdict */
+.qz-option.right { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); }
+.qz-option.right .qz-letter { background: var(--ok); border-color: var(--ok); color: #ffffff; }
+.qz-option.right .qz-mark { color: var(--ok); }
+.qz-option.wrong { border-color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger); }
+.qz-option.wrong .qz-letter { background: var(--danger); border-color: var(--danger); color: #ffffff; }
+.qz-option.wrong .qz-mark { color: var(--danger); }
+.qz-options:has(input:disabled) .qz-option { cursor: default; }
+.qz-options:has(input:disabled) .qz-option:not(.right):not(.wrong) { opacity: .5; }
+
+.qz-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 6px; }
+.qz-verdict { font-size: 15px; font-weight: 600; line-height: 1.35; text-align: center; color: var(--ink); animation: rise .3s var(--ease) both; }
+.qz-verdict.right { color: var(--ok); }
+
+/* Passport: a quiz pillar answered wrongly is discovered, without a star */
+.node.missed .ring { border: 1px solid var(--line-strong); background: var(--paper); color: var(--muted); }
+.node.missed .lbl { color: var(--muted); }
+
+/* End of the quiz with fewer than 4 stars */
+.result .result-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
+.result-stars { display: flex; justify-content: center; gap: 16px; }
+.result-stars .star-svg { width: 30px; height: 30px; }
+.result .result-mark { width: 56px; height: 56px; align-self: center; }
+.result .lead { white-space: pre-line; } /* the thank-you, then the line about quality */

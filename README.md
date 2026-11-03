@@ -1,6 +1,6 @@
 # Quality Passport · World Quality Week 2026
 
-Web app statique qui remplace le passeport papier : un QR code par pilier, une question ouverte, une étoile par réponse, et un Quality Passport en PDF après les 4 étoiles. Programme : **Quality Powering Performance**. Trois séries de QR codes, une par lieu (série 1 en français, séries 2 et 3 en anglais).
+Web app statique qui remplace le passeport papier : un QR code par pilier, une question, une étoile par réponse, et un Quality Passport en PDF après les 4 étoiles. Programme : **Quality Powering Performance**. Trois séries de QR codes, une par lieu : série 1 en français, séries 2 et 3 en anglais ; la série 2 est un quiz à choix multiples.
 
 - App en ligne : https://quality-passport.github.io/quality-passport/
 - Questions et réponses : Google Sheet « Quality Report » (onglets `Questions`, `Responses S1` à `S3`, `Stars`)
@@ -9,17 +9,24 @@ Web app statique qui remplace le passeport papier : un QR code par pilier, une q
 
 Le passeport est installé dans **trois lieux**. Chaque lieu a sa **série** de 5 QR codes (4 piliers et 1 passeport) et ses propres questions :
 
-| Série | Langue de l'app et des questions | Adresses |
-| --- | --- | --- |
-| 1 | français | `?s=1&p=1` à `?s=1&p=4`, passeport `?s=1` |
-| 2 | anglais | `?s=2&p=1` à `?s=2&p=4`, passeport `?s=2` |
-| 3 | anglais | `?s=3&p=1` à `?s=3&p=4`, passeport `?s=3` |
+| Série | Langue de l'app et des questions | Questions | Adresses |
+| --- | --- | --- | --- |
+| 1 | français | ouvertes, écrites dans le Sheet | `?s=1&p=1` à `?s=1&p=4`, passeport `?s=1` |
+| 2 | anglais | **quiz** à choix multiples, écrit dans `config.js` | `?s=2&p=1` à `?s=2&p=4`, passeport `?s=2` |
+| 3 | anglais | ouvertes, écrites dans le Sheet | `?s=3&p=1` à `?s=3&p=4`, passeport `?s=3` |
 
 Le passeport est le même pour tous : une étoile par pilier, quelle que soit la série. Le participant ne voit jamais le numéro de série.
 
+## Le quiz de la série 2
+
+- Une question par pilier, quatre réponses (A à D), une seule bonne. Le participant choisit, confirme, et voit tout de suite le verdict et la bonne réponse, même sans réseau.
+- Bonne réponse : l'étoile. Mauvaise réponse : pas d'étoile, et le pilier ne se rejoue pas (même email, même sur un autre téléphone : Cloudflare garde la première réponse).
+- Les 4 piliers joués : 4 étoiles, la célébration et le passeport PDF ; sinon un écran de fin avec le score (« Four pillars. Three stars. »), sans PDF.
+- Les questions, réponses et bonnes réponses sont dans `config.js` (`QUIZ`) : une correction demande une publication de l'app, à faire avant l'ouverture du lieu. Les 4 lignes « Série 2 » de l'onglet `Questions` ne s'affichent plus ; elles restent pour un retour en questions ouvertes (supprimer la ligne `mode: 'quiz'` de `config.js`, avant l'événement seulement).
+
 ## Écrire les questions
 
-Dans le Google Sheet, onglet **Questions** : une ligne par série et par pilier (12 lignes). Seule la colonne **Question** est à remplir.
+Dans le Google Sheet, onglet **Questions** : une ligne par série et par pilier (12 lignes). Seule la colonne **Question** est à remplir, pour les séries 1 et 3 (la série 2 est un quiz, voir plus haut).
 
 - Une modification est visible sur les téléphones en 3 minutes au plus, sans rien publier.
 - Les lignes peuvent être triées ou déplacées : chaque question est retrouvée par ses colonnes Série et Pilier.
@@ -31,9 +38,9 @@ Dans le Google Sheet, onglet **Questions** : une ligne par série et par pilier 
 
 | Onglet | Contenu |
 | --- | --- |
-| `Responses S1`, `S2`, `S3` | les réponses de chaque série, avec la question affichée à côté de chaque réponse |
+| `Responses S1`, `S2`, `S3` | les réponses de chaque série, avec la question affichée à côté de chaque réponse. Série 2 : la lettre et la réponse choisies, et une colonne `Correct` (`Yes` / `No`), ajoutée à la première réponse du quiz |
 | `Responses` | les réponses sans série (tests, anciennes versions de l'app) |
-| `Stars` | une ligne par personne, toutes séries : séries, étoile par pilier, total |
+| `Stars` | une ligne par personne, toutes séries : séries, `★` par étoile, `✗` pour un pilier du quiz raté, total des étoiles |
 
 Les colonnes peuvent être déplacées : le script les retrouve par leur nom. Ne pas renommer les onglets (un onglet de réponses manquant est recréé vide). Supprimer une ligne du Sheet ne la supprime pas de Cloudflare : l'étoile reste sur le passeport de la personne.
 
@@ -93,13 +100,13 @@ Mettre à jour le Worker : `cd worker && npx wrangler deploy`. Voir les réponse
 | `index.html` | Structure des écrans |
 | `css/` | `tokens.css` (charte Ipsen, police Rethink Sans), `base`, `components`, `screens`, `celebration` |
 | `js/main.js` | Démarrage |
-| `js/router.js` | Choix de l'écran selon l'URL (`?s=1..3&p=1..4`) et l'état |
+| `js/router.js` | Choix de l'écran selon l'URL (`?s=1..3&p=1..4`) et l'état : question ouverte, quiz, passeport, célébration, écran de fin |
 | `js/lang.js` | Langue de la page (série du QR, sinon dernière série, sinon langue du téléphone) et dates |
 | `js/questions.js` | Questions venues du Sheet, gardées sur le téléphone |
 | `js/state.js` | État local du participant |
 | `js/queue.js` | File d'attente d'envoi et restauration des étoiles |
 | `js/backend/` | API Cloudflare réelle, ou faux backend (mode simulé) |
-| `js/screens/` | Un fichier par écran |
+| `js/screens/` | Un fichier par écran ; le quiz : `quiz.js` (question à choix multiples) et `result.js` (écran de fin sous 4 étoiles), styles dans `css/quiz.css` |
 | `js/passport/` | Dessin du passeport et export PDF (jsPDF, cdnjs) |
 | `worker/` | API Cloudflare (Worker + D1 + KV), copie vers le Sheet et copie des questions |
 | `apps-script/Code.gs` | Script Google à coller dans le Sheet (range les réponses par série, lit les questions, tient l'onglet Stars) |
@@ -115,6 +122,8 @@ npm install
 npx playwright install webkit chromium
 npm run serve          # http://localhost:4173  (toujours en mode simulé ; ?live=1 pour la vraie API)
 npm test               # tests du script Google et du Worker, puis Playwright (iPhone 13, Pixel 7, iPhone SE)
+npm run golden:check   # séries 1 et 3 comparées à leur référence locale (écrans au pixel près, requêtes, onglets du Sheet)
+npm run golden:take    # reprend cette référence (tests/golden/, hors dépôt), à faire sur le code d'avant un changement
 npm run qr -- https://quality-passport.github.io/quality-passport/
 ```
 
